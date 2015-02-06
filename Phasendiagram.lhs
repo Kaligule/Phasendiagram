@@ -8,8 +8,6 @@ Compilerflags (wharscheinlich zu viele) und Importe (wahrscheinlich zu viele)
 >
 > import Diagrams.Prelude
 > import Diagrams.Backend.SVG.CmdLine
-> import Diagrams.TwoD.Types
-> import Diagrams.TwoD.Path.Metafont
 >
 
 Die Main von mainWith ist ganz cool. Ich muss einmal compilieren (mit ```ghc --make Phasendiagram.lhs```) und dann einmal ausfuehren mit ```./Phasendiagram -o Phasendiagram.svg -l -s Phasendiagram.lhs -h 500```. Dann wird das Bild erstellt und nach jeder gespeicherten Aenderung neu erstellt.
@@ -36,36 +34,31 @@ Die Funktion f heißt bei uns Vektorfeld. Sie bildet einen Punkt im Raum (wir ha
 Das Vektorfeld
 --------------
 
-Wenn wir einen Vektorpfeil malen, sollten wir beruecksichtigen dass manche Pfeile laenger und manche kürzer sind. Also müssen sie unterschiedlich gemalt werden.
+Liefert eine Visualisierung des Vektorfeldes vectorField fuer einen Punkt.
 
-> --arrowAtPoint' :: P2 -> Diagram B R2
-> --arrowAtPoint' point = arrow (vectorField point)
+> arrowAtPoint :: P2 -> Diagram B R2
+> arrowAtPoint point = arrowDia (vectorField point)
 
-> -- arrow :: R2 Diagram B R2
-> -- arrow = ...
+Ein Vektorpfeil wird gezeichnet. Das Bild haengt tatsaechlich nur vom Vektor ab (nicht von dem Punkt, wo der Pfeil gemalt wird) und hat seinen Ursprung im hintersten Punkt des Schaftes.
 
-Sollte abstrahiert werden, denn wie der Pfeil aussieht haengt eigentlich nur vom Vektor, nicht vom Ort ab.
-
-> arrowAtPoint :: P2 ->  Diagram B R2
-> arrowAtPoint point
->   | m == 0    = mempty
->   | otherwise = arrowAt' opts point (sL *^ vf) # alignTL
+> arrowDia :: R2 -> Diagram B R2
+> arrowDia vec
+>   | m  == 0   = mempty
+>   | otherwise = arrowV' opts (scale sL vec)
 >   where
->     vf   = vectorField point
->     m    = magnitude $ vectorField point
+>     m    = magnitude vec
 >
 > -- Head size is a function of the length of the vector
 > -- as are tail size and shaft length.
 >
->     hs   = 0.01* m
->     sW   = 0.0004 * m
->     sL   = 0.005 + 0.1 * m
->     opts = (with & arrowHead  .~ spike
->                  & headLength   .~ Normalized hs
+>     hs   = 0.005 + 0.0150 * log (1+m)
+>     sW   = 0.001 + 0.0008 * log (1+m)
+>     sL   = 0.080 + 0.0200 * log (1+m)
+>     opts = (with & arrowHead  .~ dart -- spike is nice, too
+>                  & headLength .~ Normalized hs
 >                  & shaftStyle %~ lwN sW)
 
-
-Alle Pfeile an ihrem richtigen Platz
+Ein Bild von allen Pfeilen an ihrem richtigen Platz
 
 > field =  position $ graph arrowAtPoint points
 >   where

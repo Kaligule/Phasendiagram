@@ -10,16 +10,34 @@ Compilerflags (wharscheinlich zu viele) und Importe (wahrscheinlich zu viele)
 > import Diagrams.Backend.SVG.CmdLine
 >
 
+> import TypeModule (Borders)
+
+
+
+
+> clipToBorders :: Borders -> Diagram B R2 -> Diagram B R2
+> clipToBorders (x1,x2,y1,y2) = clipTo (rect (x2-x1) (y2-y1))
+
 Die Main von mainWith ist ganz cool. Ich muss einmal compilieren (mit ```ghc --make Phasendiagram.lhs```) und dann einmal ausfuehren mit ```./Phasendiagram -o Phasendiagram.svg -l -s Phasendiagram.lhs -h 500```. Dann wird das Bild erstellt und nach jeder gespeicherten Aenderung neu erstellt.
 
 > main :: IO()
 > main = do
->   mainWith phasediagram
+>   borders <- getBorders
+>   mainWith (phasediagram borders)
 
-> phasediagram :: Diagram B R2
-> phasediagram = (bg white . clipTo (rect (x_2-x_1) (y_2-y_1))) $
->                    field 
->                    <> (redlines startpoints)
+> phasediagram :: Borders -> Diagram B R2
+> phasediagram borders = bg white
+>              . clipToBorders borders
+>              $ field borders
+>              <> (redlines startpoints)
+
+The Area that is shown is between this choordinates
+
+> getBorders :: IO Borders
+> getBorders = return (-2,2,-2,2)
+
+
+
 
 Die Differentialgleichung, die wir visualisieren, ist explizit und zeitunabhaengig. Sie hat also die Form ```x'(t) = f(x(t))```.
 (Irgendwann koennte man eventuell auch zeitabhaengige Diffgleichungen anschauen. Dazu würde man nicht nur ein epsilon haben, sondern ein epsilon_raum und ein epsilon_zeit).
@@ -27,7 +45,7 @@ Die Funktion f heißt bei uns Vektorfeld. Sie bildet einen Punkt im Raum (wir ha
 
 
 > vectorField :: P2 -> R2
-> vectorField point = r2 (y,sin x)
+> vectorField point = r2 (cos (y),(x*(y+2)))
 >   where
 >     (x,y) = unp2 point
 
@@ -37,7 +55,7 @@ Das Vektorfeld
 Liefert eine Visualisierung des Vektorfeldes vectorField fuer einen Punkt.
 
 > arrowAtPoint :: P2 -> Diagram B R2
-> arrowAtPoint point = arrowDia (vectorField point)
+> arrowAtPoint point = arrowDia (vectorField point)-- # showOrigin
 
 Ein Vektorpfeil wird gezeichnet. Das Bild haengt tatsaechlich nur vom Vektor ab (nicht von dem Punkt, wo der Pfeil gemalt wird) und hat seinen Ursprung im hintersten Punkt des Schaftes.
 
@@ -60,33 +78,30 @@ Ein Vektorpfeil wird gezeichnet. Das Bild haengt tatsaechlich nur vom Vektor ab 
 
 Ein Bild von allen Pfeilen an ihrem richtigen Platz
 
-> field =  position $ graph arrowAtPoint points
+> field :: Borders ->  Diagram B R2
+> field borders =  position $ graph arrowAtPoint (points borders)
 >   where
 >     graph :: (a -> b) -> [a] -> [(a,b)]
 >     graph f list = zip list (map f list)
 
 
 
-The area that is shown is between this choordinates
 
-> x_1, x_2, y_1, y_2 :: Double
-> x_1 = -2.0
-> x_2 = 2.0
-> y_1 = -2.0
-> y_2 = 2.0
-
-The distance between the arrows
-
-> detail :: Double
-> detail = 0.5
 
 Create a list of points where the vectors will be placed.
 
-> points :: [P2]
-> points = map p2 locs
+> points :: Borders -> [P2]
+> points borders = map p2 locs
 >   where
 >     locs :: [(Double, Double)]
->     locs  = [(x, y) | x <- [x_1, (x_1 + detail) .. x_2], y <- [y_1, (y_1 + detail) .. y_2]]
+>     locs  = [(x, y) | x <- [x1, (x1 + detail) .. x2], y <- [y1, (y1 + detail) .. y2]]
+>     
+>     (x1,x2,y1,y2) = borders
+
+The distance between the arrows (perhaps this could be calculated from the borders?
+
+>     detail :: Double
+>     detail = 0.2
 
 
 Die roten Linien
@@ -95,7 +110,7 @@ Die roten Linien
 Einige Punkte (zum Beispiel die Randbedingungen der Differentialgleichung) werden ausgewählt, um als Startpunkt der roten Linien zu dienen.
 
 > startpoints :: [P2]
-> startpoints = map p2 [(x,y) | x <- [-0.1,0.1], y  <- [-0.1,0.1]]
+> startpoints = map p2 [(x,y) | x <- [-0.5,0.5], y  <- [-0.5,0.5]]
 
 Bin ich an einem Punkt, schauen wir den entsprechenden Vektor des Vektorfeldes an, multipliziere ihn mit epsilon ...
 

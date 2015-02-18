@@ -102,9 +102,18 @@ Das hier ist die Tabelle von Operatoren, die geparsed werden koennen.
 > -- reservedOp :: ParsecT String () Data.Functor.Identity.Identity a
 >            -- -> ParsecT String () Data.Functor.Identity.Identity a
 > reservedOp = P.reservedOp lexer
+>
+>
+> parseVariable :: Parser (Term a)
+> parseVariable = do
+>     variable <- (char 'x') <|> char 'y'
+>     case variable of
+>         'x' -> return VarX
+>         'y' -> return VarY
+>         _   -> error "keine bekannte Variable"
 > 
 > term =  parens expr
->     <|> (Con . toFloat) <$> constant
+>     <|> (Con . toFloat) <$> constant <|> parseVariable
 >     <?> "term that makes sense"
 >     where
 >         toFloat :: Either Integer Double -> Double
@@ -116,9 +125,5 @@ Das hier ist die Tabelle von Operatoren, die geparsed werden koennen.
 > 
 > expr :: Parser (Term Double)
 > expr = buildExpressionParser table term <?> "expression"
-
-
-
-
 
 

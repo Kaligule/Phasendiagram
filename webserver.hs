@@ -5,8 +5,11 @@ import Data.Maybe (fromMaybe, catMaybes)
 import TypeModule (Borders)
 
 
-cgiMain :: String -> CGI CGIResult
-cgiMain bildstring = do
+main :: IO ()
+main = runCGI . handleErrors $ cgiMain
+
+cgiMain :: CGI CGIResult
+cgiMain = do
         -- read input from web formular
 	maybex1 <- readInput "x1" :: CGI (Maybe Double)
 	maybex2 <- readInput "x2" :: CGI (Maybe Double)
@@ -17,14 +20,15 @@ cgiMain bildstring = do
         -- replace input with defaults if necessary
         let (borders, functionString) = fillInDefaults (maybex1, maybex2, maybey1, maybey2) maybeFunctionString
 
+        -- validate input
+        let errormessages = validateInput borders functionString
+        -- weisnichtwasdasist <- (setHeader "content-type" "image/svg+xml") 
+
         -- parse function String
         let vectorfield = parseFunktionString functionString
 
-        -- validate input
-        let errormessages = validateInput borders bildstring
-        -- weisnichtwasdasist <- (setHeader "content-type" "image/svg+xml") 
-
         -- generate bildstring from parameters borders and vectorfield here
+        bildstring <- liftIO $ computePicture borders vectorfield
 
         -- deliver result
         if null errormessages
@@ -32,10 +36,9 @@ cgiMain bildstring = do
         else outputInternalServerError ("Folgende Sachen haben nicht funktioniert:" : errormessages)
 
 
-main :: IO ()
-main = do
-        bildstring <- readFile "Phasendiagram.svg"
-        runCGI . handleErrors . cgiMain $ bildstring
+-- Do really compute the picture, not just claim it
+computePicture :: Borders -> ((Double, Double) -> (Double, Double)) -> IO (String)
+computePicture _ _ = readFile "Phasendiagram.svg"
 
 fillInDefaults :: (Maybe Double, Maybe Double, Maybe Double, Maybe Double) -> Maybe String -> (Borders, String)
 fillInDefaults (maybex1, maybex2, maybey1, maybey2) maybeFunctionString = ((x1, x2, y1, y2), functionString)

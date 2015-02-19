@@ -20,9 +20,6 @@ Exporte
 
 Um diese Funktionen geht es letztendlich.
 
-
-> -- = fmap evaluateTerm . rightToMaybe . parseTerm $ str
-
 > parseR1toR1 :: String -> Maybe (Double -> Double)
 > parseR1toR1 = fmap evalTerm1 . rightToMaybe . parse parse1Term "Funktion from R1 to R1"
 > parseR2toR1 :: String -> Maybe (Double -> Double -> Double)
@@ -30,7 +27,7 @@ Um diese Funktionen geht es letztendlich.
 > parseR3toR1 :: String -> Maybe (Double -> Double -> Double -> Double)
 > parseR3toR1 = fmap evalTerm3 . rightToMaybe . parse parse1Term "Funktion from R3 to R1"
 
-Die hier sind um einiges schwieriger: Man braucht zwei Hilffunktionen
+Leider ist es sehr viel schwieriger, die Funktionen in den R^2 richtig hin zu bekommen. Man braucht zwei Hilfsfunktionen.
 
 > parseR1toR2 :: String -> Maybe (Double -> (Double,Double))
 > parseR1toR2 = f1 evalTerm1 . rightToMaybe . parse parse2Term "Funktion from R1 to R2"

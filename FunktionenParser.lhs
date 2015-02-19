@@ -30,14 +30,14 @@ Um diese Funktionen geht es letztendlich.
 Leider ist es sehr viel schwieriger, die Funktionen in den R^2 richtig hin zu bekommen. Man braucht zwei Hilfsfunktionen.
 
 > parseR1toR2 :: String -> Maybe (Double -> (Double,Double))
-> parseR1toR2 = mhelper evalTerm1 . rightToMaybe . parse parse2Term "Funktion from R1 to R2"
+> parseR1toR2 = evalHelper evalTerm1 . rightToMaybe . parse parse2Term "Funktion from R1 to R2"
 > parseR2toR2 :: String -> Maybe ((Double, Double) -> (Double, Double))
-> parseR2toR2 = mhelper evalTerm2 . rightToMaybe . parse parse2Term "Funktion from R2 to R2"
+> parseR2toR2 = evalHelper evalTerm2 . rightToMaybe . parse parse2Term "Funktion from R2 to R2"
 > parseR3toR2 :: String -> Maybe ((Double, Double, Double) -> (Double, Double))
-> parseR3toR2 = mhelper evalTerm3 . rightToMaybe . parse parse2Term "Funktion from R3 to R2"
+> parseR3toR2 = evalHelper evalTerm3 . rightToMaybe . parse parse2Term "Funktion from R3 to R2"
 
-> mhelper ::(term -> argumente -> ergebnis) -> Maybe (term,term) -> Maybe (argumente -> (ergebnis, ergebnis))
-> mhelper = fmap . twoStarts1
+> evalHelper ::(term -> argumente -> ergebnis) -> Maybe (term,term) -> Maybe (argumente -> (ergebnis, ergebnis))
+> evalHelper = fmap . twoStarts1
 > twoStarts1 :: (a -> b -> c) -> (a,a) -> b -> (c,c)
 > twoStarts1 f as b = mapDouble (\a -> f a b) as
 

@@ -12,38 +12,36 @@
 > import           Text.Parsec.Language (haskellStyle)
 > import qualified Text.Parsec.Token    as P
 > import           Text.Parsec.String   (Parser)
-> import           Data.Either.Combinators (rightToMaybe)
+> import           Data.Either.Combinators (rightToMaybe, mapRight)
 > import           Data.Maybe (fromJust)
+
 
 Exporte
 -------
 
 Um diese Funktionen geht es letztendlich.
 
-> parseR1toR1 :: String -> Maybe (Double -> Double)
-> parseR1toR1 = fmap evalTerm1 . rightToMaybe . parse parse1Term "Funktion from R1 to R1"
-> parseR2toR1 :: String -> Maybe ((Double, Double) -> Double)
-> parseR2toR1 = fmap evalTerm2 . rightToMaybe . parse parse1Term "Funktion from R2 to R1"
-> parseR3toR1 :: String -> Maybe ((Double, Double, Double) -> Double)
-> parseR3toR1 = fmap evalTerm3 . rightToMaybe . parse parse1Term "Funktion from R3 to R1"
+> parseR1toR1 :: String -> Either ParseError (Double -> Double)
+> parseR1toR1 = mapRight evalTerm1 . parse parse1Term "Funktion from R1 to R1"
+> parseR2toR1 :: String -> Either ParseError ((Double, Double) -> Double)
+> parseR2toR1 = mapRight evalTerm2 . parse parse1Term "Funktion from R2 to R1"
+> parseR3toR1 :: String -> Either ParseError ((Double, Double, Double) -> Double)
+> parseR3toR1 = mapRight evalTerm3 . parse parse1Term "Funktion from R3 to R1"
 
 Leider ist es sehr viel schwieriger, die Funktionen in den R^2 richtig hin zu bekommen. Man braucht zwei Hilfsfunktionen.
 
-> parseR1toR2 :: String -> Maybe (Double -> (Double,Double))
-> parseR1toR2 = evalHelper evalTerm1 . rightToMaybe . parse parse2Term "Funktion from R1 to R2"
-> parseR2toR2 :: String -> Maybe ((Double, Double) -> (Double, Double))
-> parseR2toR2 = evalHelper evalTerm2 . rightToMaybe . parse parse2Term "Funktion from R2 to R2"
-> parseR3toR2 :: String -> Maybe ((Double, Double, Double) -> (Double, Double))
-> parseR3toR2 = evalHelper evalTerm3 . rightToMaybe . parse parse2Term "Funktion from R3 to R2"
+> parseR1toR2 :: String -> Either ParseError (Double -> (Double,Double))
+> parseR1toR2 = mapRight (evalHelper evalTerm1) . parse parse2Term "Funktion from R1 to R2"
+> parseR2toR2 :: String -> Either ParseError ((Double, Double) -> (Double, Double))
+> parseR2toR2 = mapRight (evalHelper evalTerm2) . parse parse2Term "Funktion from R2 to R2"
+> parseR3toR2 :: String -> Either ParseError ((Double, Double, Double) -> (Double, Double))
+> parseR3toR2 = mapRight (evalHelper evalTerm3) . parse parse2Term "Funktion from R3 to R2"
 
-> evalHelper ::(term -> argumente -> ergebnis) -> Maybe (term,term) -> Maybe (argumente -> (ergebnis, ergebnis))
-> evalHelper = fmap . twoStarts1
-> twoStarts1 :: (a -> b -> c) -> (a,a) -> b -> (c,c)
-> twoStarts1 f as b = mapDouble (\a -> f a b) as
+> evalHelper ::(term -> argumente -> ergebnis) -> (term,term) -> (argumente -> (ergebnis, ergebnis))
+> evalHelper f (t1, t2) = (\x -> (f t1 x, f t2 x))
 
 > mapDouble :: (a -> b) -> (a,a) -> (b,b)
 > mapDouble f (x,y) = (f x, f y)
-
 
 Das Aussenrum parsen
 --------------------

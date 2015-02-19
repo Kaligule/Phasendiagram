@@ -1,10 +1,10 @@
-> module Calculator.Parser ( parseR1toR1
->                          , parseR2toR1
->                          , parseR3toR1
->                          , parseR1toR2
->                          , parseR2toR2
->                          , parseR3toR2
->                          ) where
+> module FunktionenParser ( parseR1toR1
+>                         , parseR2toR1
+>                         , parseR3toR1
+>                         , parseR1toR2
+>                         , parseR2toR2
+>                         , parseR3toR2
+>                         ) where
 > 
 > import           Control.Applicative  hiding (many, (<|>))
 > import           Text.Parsec
@@ -22,34 +22,24 @@ Um diese Funktionen geht es letztendlich.
 
 > parseR1toR1 :: String -> Maybe (Double -> Double)
 > parseR1toR1 = fmap evalTerm1 . rightToMaybe . parse parse1Term "Funktion from R1 to R1"
-> parseR2toR1 :: String -> Maybe (Double -> Double -> Double)
+> parseR2toR1 :: String -> Maybe ((Double, Double) -> Double)
 > parseR2toR1 = fmap evalTerm2 . rightToMaybe . parse parse1Term "Funktion from R2 to R1"
-> parseR3toR1 :: String -> Maybe (Double -> Double -> Double -> Double)
+> parseR3toR1 :: String -> Maybe ((Double, Double, Double) -> Double)
 > parseR3toR1 = fmap evalTerm3 . rightToMaybe . parse parse1Term "Funktion from R3 to R1"
 
 Leider ist es sehr viel schwieriger, die Funktionen in den R^2 richtig hin zu bekommen. Man braucht zwei Hilfsfunktionen.
 
 > parseR1toR2 :: String -> Maybe (Double -> (Double,Double))
-> parseR1toR2 = f1 evalTerm1 . rightToMaybe . parse parse2Term "Funktion from R1 to R2"
-> parseR2toR2 :: String -> Maybe (Double -> Double -> (Double, Double))
-> parseR2toR2 = f2 evalTerm2 . rightToMaybe . parse parse2Term "Funktion from R2 to R2"
-> parseR3toR2 :: String -> Maybe (Double -> Double -> Double -> (Double, Double))
-> parseR3toR2 = f3 evalTerm3 . rightToMaybe . parse parse2Term "Funktion from R3 to R2"
+> parseR1toR2 = mhelper evalTerm1 . rightToMaybe . parse parse2Term "Funktion from R1 to R2"
+> parseR2toR2 :: String -> Maybe ((Double, Double) -> (Double, Double))
+> parseR2toR2 = mhelper evalTerm2 . rightToMaybe . parse parse2Term "Funktion from R2 to R2"
+> parseR3toR2 :: String -> Maybe ((Double, Double, Double) -> (Double, Double))
+> parseR3toR2 = mhelper evalTerm3 . rightToMaybe . parse parse2Term "Funktion from R3 to R2"
 
-> f1 ::(a -> b -> c) -> Maybe (a,a) -> Maybe (b -> (c, c))
-> f1 = fmap . twoStarts1
+> mhelper ::(term -> argumente -> ergebnis) -> Maybe (term,term) -> Maybe (argumente -> (ergebnis, ergebnis))
+> mhelper = fmap . twoStarts1
 > twoStarts1 :: (a -> b -> c) -> (a,a) -> b -> (c,c)
 > twoStarts1 f as b = mapDouble (\a -> f a b) as
-
-> f2 ::(a -> b -> c -> d) -> Maybe (a,a) -> Maybe (b -> c -> (d, d))
-> f2 f = fmap (twoStarts2 f)
-> twoStarts2 :: (a -> b -> c -> d) -> (a,a) -> b -> c -> (d,d)
-> twoStarts2 f as b c = mapDouble (\a -> f a b c) as
-
-> f3 ::(a -> b -> c -> d -> e) -> Maybe (a,a) -> Maybe (b -> c -> d -> (e, e))
-> f3 f = fmap (twoStarts3 f)
-> twoStarts3 :: (a -> b -> c -> d -> e) -> (a,a) -> b -> c -> d -> (e,e)
-> twoStarts3 f as b c d = mapDouble (\a -> f a b c d) as
 
 > mapDouble :: (a -> b) -> (a,a) -> (b,b)
 > mapDouble f (x,y) = (f x, f y)
@@ -91,27 +81,27 @@ Das Auswerten
 -------------
 
 > evalTerm0 :: (Num a, Fractional a) => Term a -> a
-> evalTerm0 term       = evaluateTerm term (undefined) (undefined) (undefined)
+> evalTerm0 term           = evaluateTerm term (undefined, undefined, undefined)
 > evalTerm1 :: (Num a, Fractional a) => Term a -> a -> a
-> evalTerm1 term x     = evaluateTerm term x (undefined) (undefined)
-> evalTerm2 :: (Num a, Fractional a) => Term a -> a -> a -> a
-> evalTerm2 term x y   = evaluateTerm term x y (undefined)
-> evalTerm3 :: (Num a, Fractional a) => Term a -> a -> a -> a -> a
-> evalTerm3 term x y z = evaluateTerm term x y z
+> evalTerm1 term x         = evaluateTerm term (x, undefined, undefined)
+> evalTerm2 :: (Num a, Fractional a) => Term a -> (a, a) -> a
+> evalTerm2 term (x, y)    = evaluateTerm term (x, y, undefined)
+> evalTerm3 :: (Num a, Fractional a) => Term a -> (a, a, a) -> a
+> evalTerm3 term (x, y, z) = evaluateTerm term (x, y, z)
 
 
 
 Wenn man VarX, VarY und VarZ weiss, kann man auch den ganzen Term berechnen.
 
-> evaluateTerm :: (Num a, Fractional a) => Term a -> a -> a -> a -> a
-> evaluateTerm (Add term1 term2) x y z = (evaluateTerm term1 x y z) + (evaluateTerm term2 x y z)
-> evaluateTerm (Sub term1 term2) x y z = (evaluateTerm term1 x y z) - (evaluateTerm term2 x y z)
-> evaluateTerm (Mul term1 term2) x y z = (evaluateTerm term1 x y z) * (evaluateTerm term2 x y z)
-> evaluateTerm (Div term1 term2) x y z = (evaluateTerm term1 x y z) / (evaluateTerm term2 x y z)
-> evaluateTerm (Con c)           _ _ _ = c
-> evaluateTerm VarX              x _ _ = x
-> evaluateTerm VarY              _ y _ = y
-> evaluateTerm VarZ              _ _ z = z
+> evaluateTerm :: (Num a, Fractional a) => Term a -> (a, a, a) -> a
+> evaluateTerm (Add term1 term2) args = (evaluateTerm term1 args) + (evaluateTerm term2 args)
+> evaluateTerm (Sub term1 term2) args = (evaluateTerm term1 args) - (evaluateTerm term2 args)
+> evaluateTerm (Mul term1 term2) args = (evaluateTerm term1 args) * (evaluateTerm term2 args)
+> evaluateTerm (Div term1 term2) args = (evaluateTerm term1 args) / (evaluateTerm term2 args)
+> evaluateTerm (Con c) _      = c
+> evaluateTerm VarX (x, _, _) = x
+> evaluateTerm VarY (_, y, _) = y
+> evaluateTerm VarZ (_, _, z) = z
 
 
 Die eigentliche Arbeit

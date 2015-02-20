@@ -8,15 +8,17 @@ Compilerflags (wharscheinlich zu viele) und Importe (wahrscheinlich zu viele)
 >
 > import Diagrams.Prelude
 > import Diagrams.Backend.SVG.CmdLine
->
-
+> import FunktionenParser (parseR2toR2)
 > import TypeModule (Borders, R2Endomorphism, Vectorfield)
 
 
 
+Eigentlich sollte man die grenzen genauer malen, mit rectangle stat rect
 
 > clipToBorders :: Borders -> Diagram B R2 -> Diagram B R2
-> clipToBorders (x1,x2,y1,y2) = clipTo (rect (x2-x1) (y2-y1)) 
+> clipToBorders (x1,x2,y1,y2) = clipTo (rect (x2-x1) (y2-y1))
+> --clipToBorders (x1,x2,y1,y2) = clipTo (rectangle (p2 (x1,y1)) (p2 (x2,y2)))
+
 
 Die Main von mainWith ist ganz cool. Ich muss einmal compilieren (mit ```ghc --make Phasendiagram.lhs```) und dann einmal ausfuehren mit ```./Phasendiagram -o Phasendiagram.svg -l -s Phasendiagram.lhs -h 500```. Dann wird das Bild erstellt und nach jeder gespeicherten Aenderung neu erstellt.
 
@@ -31,7 +33,7 @@ Die Main von mainWith ist ganz cool. Ich muss einmal compilieren (mit ```ghc --m
 > phasediagram borders vectorField = bg white
 >              . clipToBorders borders
 >              $ field borders vectorField
->              <> (redlines vectorField startpoints)
+>              <> (redlines vectorField borders startpoints)
 
 
 Die Variablen
@@ -128,18 +130,22 @@ Bin ich an einem Punkt, schauen wir den entsprechenden Vektor des Vektorfeldes a
 
 und bewege uns um genau diesen Vektor weiter. Dann beginnen wir von vorn. Dadurch erhalte ich (pro Startpunkt) eine Reihe von Punkten, welche auf einer Kurve liegen.
 
-> stuetzstellen :: Vectorfield ->  P2 -> [P2]
-> stuetzstellen vectorField startpoint = take 500 $ iterate (\p -> translate (scale epsilon (vectorField p)) p) startpoint
+> stuetzstellen :: Vectorfield -> Borders ->  P2 -> [P2]
+> stuetzstellen vectorField borders startpoint = take 5000 . takeWhile (inside borders) . iterate (\p -> translate (scale epsilon (vectorField p)) p) $ startpoint
 
-Diese Kurve kann durch den Befehl ```cubicSpline``` interpolliert werden. Dabei werden nicht einfach grob die Punkte verbunden sondern weiche Linien dazwischen gezeichnet. (Ich glaube nicht, dass es Bezierkurven sind, aber sie sehen genauso schoen aus.
+Diese Kurve kann durch den Befehl ```cubicSpline``` interpoliert werden. Dabei werden nicht einfach grob die Punkte verbunden sondern weiche Linien dazwischen gezeichnet. (Ich glaube nicht, dass es Bezierkurven sind, aber sie sehen genauso schoen aus.
 
 ```redline``` mal also die Spur des Vektorfeldes für einen Anfangspunkt,
 
-> redline :: Vectorfield ->  P2 -> Diagram B R2
-> redline vectorField = lc red . cubicSpline False . stuetzstellen vectorField
+> redline :: Vectorfield -> Borders ->  P2 -> Diagram B R2
+> redline vectorField borders = lc red . cubicSpline False . stuetzstellen vectorField borders
 
 ```redlines``` tut das gleiche fuer mehrere Punkte.
 
-> redlines :: Vectorfield -> [P2] ->  Diagram B R2
-> redlines vectorField startpoints = foldl (<>) mempty (map (redline vectorField) startpoints)
- 
+> redlines :: Vectorfield -> Borders -> [P2]->  Diagram B R2
+> redlines vectorField borders startpoints = foldl (<>) mempty (map (redline vectorField borders) startpoints)
+
+
+> inside :: Borders -> P2 -> Bool
+> inside (x1,x2,y1,y2) p2 = and [x1 <= xp, xp <= x2, y1 <= yp, yp <= y2] where
+>       (xp, yp) = unp2 p2

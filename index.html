@@ -1,14 +1,28 @@
 <!DOCTYPE html>
 <html>
-	<body>
-		<form action="/webserver.cgi" method="GET">
-			<input name="x1" type="number" value="-2" ><br>
-			<input name="x2" type="number" value="2" ><br>
-			<input name="y1" type="number" value="-2" ><br>
-			<input name="y2" type="number" value="2" ><br>
-			<input name="function" type="text" value="(2*y+x,x+3)">
-			<input type="submit" value="Phasendiagram zeichnen">
-		</form>
-	</body>
+  <head>
+    <title>Phasendiagram</title>
+  </head>
+  <body>
+    <form action="/webserver.cgi" method="GET">
+      <label>
+	Funktion: <input name="function" type="text" placeholder="(2*y+x, x+3)">
+      </label><br>
+      <label>
+	x-Achse von 
+	<input name="x1" type="number" step="0.1" value="-2">
+	bis
+	<input name="x2" type="number" step="0.1" value="2" >
+      </label><br>
+      <label>
+	y-Achse von
+	<input name="y1" type="number" step="0.1" value="-2" >
+	bis
+	<input name="y2" type="number" step="0.1" value="2" >
+      </label><br>
+ 
+      <input type="submit" value="Phasendiagram zeichnen">
+    </form>
+  </body>
 </html>
 

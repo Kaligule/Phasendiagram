@@ -1,6 +1,8 @@
 Phasendiagram
 =============
 
+> module Phasendiagram (plotToFile) where
+
 Compilerflags (wharscheinlich zu viele) und Importe (wahrscheinlich zu viele)
 
 > {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -8,6 +10,7 @@ Compilerflags (wharscheinlich zu viele) und Importe (wahrscheinlich zu viele)
 >
 > import Diagrams.Prelude
 > import Diagrams.Backend.SVG.CmdLine
+> import Diagrams.Backend.SVG (renderSVG)
 > import FunktionenParser (parseR2toR2)
 > import TypeModule (Borders, R2Endomorphism, Vectorfield)
 
@@ -21,19 +24,29 @@ Eigentlich sollte man die grenzen genauer malen, mit rectangle stat rect
 
 
 Die Main von mainWith ist ganz cool. Ich muss einmal compilieren (mit ```ghc --make Phasendiagram.lhs```) und dann einmal ausfuehren mit ```./Phasendiagram -o Phasendiagram.svg -l -s Phasendiagram.lhs -h 500```. Dann wird das Bild erstellt und nach jeder gespeicherten Aenderung neu erstellt.
+In unserem Fall ist die main zwar sehr praktisch, um das Diagram selbst zu debugen, aber zum Schluss exportieren wir ```plotToFile```.
 
 > main :: IO() 
 > main = do
->   borders <- getBorders
+>   borders <- getBorders 
 >   function <- getFunction
 >   let vectorField = prepareVectorfield function
 >   mainWith (phasediagram borders vectorField)
+
+Die Funktion, die wir exportieren, weil sie das macht was wir wollen: Die Parameter entgegennehmen, alles plotten und zum Schluss das SVG in ein Bild reinschreiben.
+
+Das B in Diagram B R steht fuer Backend. Jedes Backend (zum Beispiel SVG, PGN oder so) exportiert ein Typesynonym B, so dass man immer B schreiben kann. Das ist super praktisch, sonst muesste man naemlich schon bei einem dummen Kreis wissen, ob man zum Schluss eine .svg oder eine .pgn Datei haben will.
+
+> plotToFile :: Borders -> R2Endomorphism -> IO()
+> plotToFile borders endomorphism = renderSVG "Phasendiagram.svg" (Width 400) (phasediagram borders vectorField)
+>     where
+>         vectorField = prepareVectorfield endomorphism
 
 > phasediagram :: Borders -> Vectorfield -> Diagram B R2
 > phasediagram borders vectorField = bg white
 >              . clipToBorders borders
 >              $ field borders vectorField
->              <> (redlines vectorField borders startpoints)
+>              <> (redlines vectorField borders startpoints) 
 
 
 Die Variablen
@@ -49,7 +62,7 @@ The Area that is shown is between this choordinates
 The vectorField that is shown
 
 > getFunction :: IO R2Endomorphism
-> getFunction = return (\(x,y) -> (x+y, x))
+> getFunction = return (\(x,y) -> (-x, x))
 
 
 

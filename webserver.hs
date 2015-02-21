@@ -4,6 +4,7 @@ import Network.CGI
 import Data.Maybe (fromMaybe, catMaybes)
 import TypeModule (Borders, R2Endomorphism)
 import FunktionenParser (parseR2toR2)
+import Phasendiagram (plotToFile)
 import Data.Either.Combinators (fromLeft', fromRight')
 --import Data.Either (isRight)
 import Text.Parsec (ParseError (..))
@@ -45,7 +46,9 @@ cgiMain = do
 
 -- Do really compute the picture, not just claim it
 computePicture :: Borders -> ((Double, Double) -> (Double, Double)) -> IO (String)
-computePicture _ _ = readFile "Phasendiagram.svg"
+computePicture borders endomorphism = do
+  plotToFile borders endomorphism
+  readFile "Phasendiagram.svg"
 
 fillInDefaults :: (Maybe Double, Maybe Double, Maybe Double, Maybe Double) -> Maybe String -> (Borders, String)
 fillInDefaults (maybex1, maybex2, maybey1, maybey2) maybeFunctionString = ((x1, x2, y1, y2), functionString)

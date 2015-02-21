@@ -57,7 +57,7 @@ fillInDefaults (maybex1, maybex2, maybey1, maybey2) maybeFunctionString = ((x1, 
         x2 = fromMaybe ( 3) maybex2
         y1 = fromMaybe (-3) maybey1
         y2 = fromMaybe ( 3) maybey2
-        functionString = fromMaybe ("(y,2*x)") maybeFunctionString
+        functionString = fromMaybe ("(2*y+x,x+3)") maybeFunctionString
        
         
 

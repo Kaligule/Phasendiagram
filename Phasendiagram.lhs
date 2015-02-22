@@ -1,7 +1,7 @@
 Phasendiagram
 =============
 
-> module Phasendiagram (plotToFile) where
+> --module Phasendiagram (plotToFile) where
 
 Compilerflags (wharscheinlich zu viele) und Importe (wahrscheinlich zu viele)
 
@@ -86,7 +86,7 @@ Ein Vektorpfeil wird gezeichnet. Das Bild haengt tatsaechlich nur vom Vektor ab 
 > arrowDia :: R2 -> Diagram B R2
 > arrowDia vec
 >   | m  == 0   = mempty
->   | otherwise = arrowV' opts (scale sL vec)
+>   | otherwise = arrowV' opts (scale sL vec) # lc grey
 >   where
 >     m    = magnitude vec
 >

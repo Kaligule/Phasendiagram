@@ -1,7 +1,7 @@
 Phasendiagram
 =============
 
-> --module Phasendiagram (plotToFile) where
+> module Phasendiagram (plotToFile) where
 
 Compilerflags (wharscheinlich zu viele) und Importe (wahrscheinlich zu viele)
 
@@ -137,7 +137,7 @@ Die roten Linien
 Einige Punkte (zum Beispiel die Randbedingungen der Differentialgleichung) werden ausgewählt, um als Startpunkt der roten Linien zu dienen.
 
 > startpoints :: [P2]
-> startpoints = map p2 [(x,y) | x <- [-0.5,0.5], y  <- [-0.5,0.5]]
+> startpoints = map p2 [(x,y) | x <- [-0.75, 0.75], y  <- [-0.75, 0.75]]
 
 Bin ich an einem Punkt, schauen wir den entsprechenden Vektor des Vektorfeldes an, multipliziere ihn mit epsilon ...
 

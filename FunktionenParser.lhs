@@ -102,6 +102,10 @@ Wenn man VarX, VarY und VarZ weiss, kann man auch den ganzen Term berechnen.
 > evaluateTerm (Mul term1 term2) args = (evaluateTerm term1 args) * (evaluateTerm term2 args)
 > evaluateTerm (Div term1 term2) args = (evaluateTerm term1 args) / (evaluateTerm term2 args)
 > evaluateTerm (Pow term1 term2) args = (evaluateTerm term1 args) ** (evaluateTerm term2 args)
+> evaluateTerm (Sin term1      ) args = sin (evaluateTerm term1 args)
+> evaluateTerm (Cos term1      ) args = cos (evaluateTerm term1 args)
+> evaluateTerm (Tan term1      ) args = tan (evaluateTerm term1 args)
+> evaluateTerm (Abs term1      ) args = abs (evaluateTerm term1 args)
 > evaluateTerm (Con c) _      = c
 > evaluateTerm VarX (x, _, _) = x
 > evaluateTerm VarY (_, y, _) = y
@@ -122,6 +126,10 @@ Der Plan ist, erstmal den String in einen Term zu parsen und den dann auszuwerte
 >             | Mul (Term a) (Term a)
 >             | Div (Term a) (Term a)
 >             | Pow (Term a) (Term a)
+>             | Sin (Term a)
+>             | Cos (Term a)
+>             | Tan (Term a)
+>             | Abs (Term a)
 >             | Con a
 >             | VarX
 >             | VarY
@@ -141,6 +149,10 @@ Term ist eine Instanz der Klasse Show.
 >         show (Mul x y) = show x ++ " * " ++ show y
 >         show (Div x y) = show x ++ " / " ++ show y
 >         show (Pow x y) = show x ++ " ^ " ++ show y
+>         show (Sin x  ) = "sin(" ++ show x ++ ")"
+>         show (Cos x  ) = "cos(" ++ show x ++ ")"
+>         show (Tan x  ) = "tan(" ++ show x ++ ")"
+>         show (Abs x  ) = "|" ++ show x ++ "|"
 >         show (Con x  ) = show x
 >         show VarX      = "x"
 >         show VarY      = "y"
@@ -183,6 +195,8 @@ Das hier ist die Tabelle von Operatoren, die geparsed werden koennen.
 > table = [ [binary "^" Pow AssocLeft, binary "**" Pow AssocLeft ]
 >         , [binary "*" Mul AssocLeft, binary "/" Div AssocLeft ]
 >         , [binary "+" Add AssocLeft, binary "-" Sub AssocLeft ]
+>         , [unary "sin" Sin, unary "cos" Cos, unary "tan" Tan]
+>         , [unary "abs" Abs]
 >         ]
 > 
 >
@@ -191,7 +205,7 @@ Was hier passiert weiss ich nicht.
 
 > lexer :: P.TokenParser ()
 > lexer = P.makeTokenParser (haskellStyle
->                           { P.reservedOpNames = ["+", "-", "*", "/", "^", "**"]
+>                           { P.reservedOpNames = ["+", "-", "*", "/", "^", "**", "sin", "cos", "tan", "abs"]
 >                           }
 >                           )
 >
@@ -228,14 +242,20 @@ Eine Variable parsen ist eigentlich leicht: Wenn x da steht nimmt man VarX, wenn
 
 
 > -- binary :: String -> (a -> a -> a) -> Assoc -> Operator String () Identity a
-> binary name fun = Infix (helper name fun)
+> binary name fun = Infix (helper2 name fun)
+>   where
+>     helper2 :: String -> (a -> a -> a) -> Parser (a -> a -> a)
+>     helper2 name fun = do
+>       reservedOp name
+>       return fun
 >
-> helper :: String -> (a -> a -> a) -> Parser (a -> a -> a)
-> helper name fun = do
->     reservedOp name
->     return fun
-> 
-
+> unary name fun = Prefix (helper1 name fun)
+>   where
+>     helper1 :: String -> (a -> a) -> Parser (a -> a)
+>     helper1 name fun = do
+>       reservedOp name
+>       return fun
 
 > reservedOp :: String -> Parser ()
 > reservedOp = P.reservedOp lexer
+

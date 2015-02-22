@@ -59,10 +59,13 @@ The Area that is shown is between this choordinates
 > getBorders :: IO Borders
 > getBorders = return (-2,2,-2,2)
 
-The vectorField that is shown
+The vectorField that is shown.
+These vectorFields look great:
+
+- (-sin(x+3*y), tan(x)))
 
 > getFunction :: IO R2Endomorphism
-> getFunction = return (\(x,y) -> (-x, x))
+> getFunction = return (\(x,y) -> (-sin(x+3*y), tan(x)))
 
 
 
@@ -151,7 +154,13 @@ Diese Kurve kann durch den Befehl ```cubicSpline``` interpoliert werden. Dabei w
 ```redline``` mal also die Spur des Vektorfeldes für einen Anfangspunkt,
 
 > redline :: Vectorfield -> Borders ->  P2 -> Diagram B R2
-> redline vectorField borders = lc red . cubicSpline False . stuetzstellen vectorField borders
+> redline vectorField borders = forewards <> backwards
+>   where
+>     forewards = lc red . cubicSpline False . stuetzstellen vectorField borders
+>     backwards = lc red . cubicSpline False . stuetzstellen (revert vectorField) borders
+> 
+> revert :: Vectorfield -> Vectorfield
+> revert vectorField = r2 . (\(x,y) -> (-x, -y)) . unr2 . vectorField
 
 ```redlines``` tut das gleiche fuer mehrere Punkte.
 
@@ -162,3 +171,4 @@ Diese Kurve kann durch den Befehl ```cubicSpline``` interpoliert werden. Dabei w
 > inside :: Borders -> P2 -> Bool
 > inside (x1,x2,y1,y2) p2 = and [x1 <= xp, xp <= x2, y1 <= yp, yp <= y2] where
 >       (xp, yp) = unp2 p2
+

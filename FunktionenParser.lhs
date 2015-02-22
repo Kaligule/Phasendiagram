@@ -4,6 +4,7 @@
 >                         , parseR1toR2
 >                         , parseR2toR2
 >                         , parseR3toR2
+>                         , unsafeRight
 >                         ) where
 > 
 > import           Control.Applicative  hiding (many, (<|>))
@@ -18,6 +19,10 @@
 
 Exporte
 -------
+
+> unsafeRight :: Either a b -> b
+> unsafeRight (Right x) = x
+> unsafeRight _ = error "Should have gone right."
 
 Um diese Funktionen geht es letztendlich.
 
@@ -78,24 +83,25 @@ Um Tuple zu parsen benutzt man diese Funktionen. Die benutzen ```expr``` und kue
 Das Auswerten
 -------------
 
-> evalTerm0 :: (Num a, Fractional a) => Term a -> a
+> evalTerm0 :: (Num a, Fractional a, Floating a) => Term a -> a
 > evalTerm0 term           = evaluateTerm term (undefined, undefined, undefined)
-> evalTerm1 :: (Num a, Fractional a) => Term a -> a -> a
+> evalTerm1 :: (Num a, Fractional a, Floating a) => Term a -> a -> a
 > evalTerm1 term x         = evaluateTerm term (x, undefined, undefined)
-> evalTerm2 :: (Num a, Fractional a) => Term a -> (a, a) -> a
+> evalTerm2 :: (Num a, Fractional a, Floating a) => Term a -> (a, a) -> a
 > evalTerm2 term (x, y)    = evaluateTerm term (x, y, undefined)
-> evalTerm3 :: (Num a, Fractional a) => Term a -> (a, a, a) -> a
+> evalTerm3 :: (Num a, Fractional a, Floating a) => Term a -> (a, a, a) -> a
 > evalTerm3 term (x, y, z) = evaluateTerm term (x, y, z)
 
 
 
 Wenn man VarX, VarY und VarZ weiss, kann man auch den ganzen Term berechnen.
 
-> evaluateTerm :: (Num a, Fractional a) => Term a -> (a, a, a) -> a
+> evaluateTerm :: (Num a, Fractional a, Floating a) => Term a -> (a, a, a) -> a
 > evaluateTerm (Add term1 term2) args = (evaluateTerm term1 args) + (evaluateTerm term2 args)
 > evaluateTerm (Sub term1 term2) args = (evaluateTerm term1 args) - (evaluateTerm term2 args)
 > evaluateTerm (Mul term1 term2) args = (evaluateTerm term1 args) * (evaluateTerm term2 args)
 > evaluateTerm (Div term1 term2) args = (evaluateTerm term1 args) / (evaluateTerm term2 args)
+> evaluateTerm (Pow term1 term2) args = (evaluateTerm term1 args) ** (evaluateTerm term2 args)
 > evaluateTerm (Con c) _      = c
 > evaluateTerm VarX (x, _, _) = x
 > evaluateTerm VarY (_, y, _) = y
@@ -115,6 +121,7 @@ Der Plan ist, erstmal den String in einen Term zu parsen und den dann auszuwerte
 >             | Sub (Term a) (Term a)
 >             | Mul (Term a) (Term a)
 >             | Div (Term a) (Term a)
+>             | Pow (Term a) (Term a)
 >             | Con a
 >             | VarX
 >             | VarY
@@ -133,6 +140,7 @@ Term ist eine Instanz der Klasse Show.
 >         show (Sub x y) = show x ++ " - " ++ show y
 >         show (Mul x y) = show x ++ " * " ++ show y
 >         show (Div x y) = show x ++ " / " ++ show y
+>         show (Pow x y) = show x ++ " ^ " ++ show y
 >         show (Con x  ) = show x
 >         show VarX      = "x"
 >         show VarY      = "y"
@@ -172,14 +180,18 @@ Hier kommt das eigentliche Parsen. Davon verstehe ich nicht alles, insbesondere 
 
 Das hier ist die Tabelle von Operatoren, die geparsed werden koennen.
 
-> table = [ [binary "*" Mul AssocLeft, binary "/" Div AssocLeft ]
+> table = [ [binary "^" Pow AssocLeft, binary "**" Pow AssocLeft ]
+>         , [binary "*" Mul AssocLeft, binary "/" Div AssocLeft ]
 >         , [binary "+" Add AssocLeft, binary "-" Sub AssocLeft ]
 >         ]
 > 
-> 
+>
+
+Was hier passiert weiss ich nicht.
+
 > lexer :: P.TokenParser ()
 > lexer = P.makeTokenParser (haskellStyle
->                           { P.reservedOpNames = ["+", "-", "*", "/"]
+>                           { P.reservedOpNames = ["+", "-", "*", "/", "^", "**"]
 >                           }
 >                           )
 >
